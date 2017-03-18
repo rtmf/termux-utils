@@ -1,0 +1,65 @@
+#!/system/bin/sh 
+RUNCMD=0
+SHOWENV=0
+SHOWSET=0
+SHOWEXP=0
+USER="root"
+if [ "$#" -gt 0 ]
+then
+	while [ "${1##-}" != "${1}" ]
+	do
+		case "$1" in
+			"-q")
+				SHOWENV=0
+				SHOWEXP=0
+				SHOWSET=0
+				;;
+			"-x")
+				SHOWEXP=1
+				;;
+			"-s")
+				SHOWSET=1
+				;;
+			"-e")
+				SHOWENV=1
+				;;
+			"-c")
+				RUNCMD=1
+				;;
+			"-u")
+				shift
+				USER="$1"
+				;;
+		esac
+		shift
+	done
+fi
+SAYENV=""
+SETENV=""
+EXPENV=""
+sayenv() {
+	VAR="$1"
+	shift
+	eval export "$VAR"="$@"
+	export SAYENV="${SAYENV} ${VAR}=\"$@\""
+	export EXPENV="${SAYENV}\nexport $VAR=\"$@\""
+	export SETENV="${SETENV}\n${VAR}=\"$@\""
+}
+sayenv TERMUX "/data/data/com.termux/files"
+sayenv PREFIX "${TERMUX}/usr"
+sayenv PATH "${PREFIX}/bin:${PREFIX}/bin/applets:${HOME}/bin:/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin"
+sayenv LD_LIBRARY_PATH "${PREFIX}/lib:/system/lib:/vendor/lib"
+sayenv USER_HOME "${TERMUX}/home"
+sayenv ROOT_HOME "${USER_HOME}/.suroot"
+if [ `busybox id -u` -eq 0 ]
+then
+	sayenv HOME ${ROOT_HOME}
+else
+	sayenv HOME ${USER_HOME}
+fi
+sayenv ANDROID_ROOT "/system"
+sayenv ANDROID_DATA "/data"
+[ "$SHOWENV" -eq 1 ] && echo "$SAYENV"
+[ "$HOWSET" -eq 1 ] && echo "$SETENV"
+[ "$SHOWEXP" -eq 1 ] && echo "$EXPENV"
+[ "$RUNCMD" -eq 1 ] && exec  "$@"
