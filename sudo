@@ -1,0 +1,42 @@
+#!/system/bin/sh
+
+# sudo for Termux
+
+# For security reasons some environent variables are reset by su
+# So we need to set LD_LIBRARY_PATH
+
+# Root's HOME is set to 'termux's home/.suroot'.
+# Startup files and other stuffs can be added there.
+eval `/system/bin/termux-env`
+ROOT_HOME=$HOME/.suroot
+PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+case "$1" in
+  '-')  
+    # check if user has set shell
+    if test -x "$HOME/.termux/shell" ; then
+      ROOT_SHELL=`readlink $HOME/.termux/shell`
+    # has installed bash?
+    elif test -x "$PREFIX/bin/bash" ; then
+      ROOT_SHELL="$PREFIX/bin/bash"
+    # no..fallback to default ash.
+    else
+      ROOT_SHELL="$PREFIX/bin/ash"
+    fi
+
+		exec su -c "/system/bin/termux-env -c $ROOT_SHELL"
+;;
+
+  ''|'--help')
+    echo 'Sets up environment to allow termux programs to run with root access'
+    echo 'Not the sudo as found in other *nixes'
+    echo
+    echo 'Usage: sudo [-|cmd args]'
+    echo '- : Try to start a shell of termux as root shell. su by default runs /system/bin/sh.'
+    echo 'cmd : Run termux program with args as root.'
+;;
+
+  *)
+	  exec su -c "/system/bin/termux-env -c ${@}";
+;;
+esac
+
